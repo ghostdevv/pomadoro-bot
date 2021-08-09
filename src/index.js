@@ -8,7 +8,7 @@ const client = new Client({
 
 const jelly = new JellyCommands(client);
 
-jelly.slashCommands.load('dev/slashCommands');
+jelly.slashCommands.load('src/slashCommands');
 
 client.on('ready', () => {
     console.log('Online');
