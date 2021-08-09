@@ -1,0 +1,15 @@
+{
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon ."
+  },
+  "dependencies": {
+    "discord.js": "^13.0.1",
+    "dotenv": "^10.0.0",
+    "jellycommands": "github:ghostdevv/jellycommands"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.12"
+  }
+}
