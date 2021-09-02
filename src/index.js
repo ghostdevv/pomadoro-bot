@@ -40,6 +40,7 @@ client.on('voiceStateUpdate', (old, state) => {
                     {
                         description:
                             'You joined a channel in focus mode, so you are muted until it ends',
+                        color: 'RANDOM',
                     },
                 ],
             });
