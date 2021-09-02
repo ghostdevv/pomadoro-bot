@@ -153,7 +153,7 @@ async function start({ interaction, client }) {
         });
 
     for (const [, member] of channel.members) {
-        await member.voice.setMute(true);
+        if (!member.user.bot) await member.voice.setMute(true);
     }
 
     client.focus.add({

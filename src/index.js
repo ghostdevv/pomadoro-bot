@@ -23,6 +23,8 @@ client.on('ready', () => {
 client.on('voiceStateUpdate', (old, state) => {
     const isFocus = (channelId) => !!cache.getKey(channelId);
 
+    if (state.member.user.bot) return;
+
     const joined = !old.channel && state.channel;
     const moved =
         old.channelId != state.channelId && old.channelId && state.channelId;
