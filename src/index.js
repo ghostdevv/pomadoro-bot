@@ -32,6 +32,21 @@ client.on('voiceStateUpdate', (old, state) => {
 
     const focus = isFocus(state.channelId);
     state.member.voice.setMute(focus);
+
+    if (focus) {
+        try {
+            state.member.send({
+                embeds: [
+                    {
+                        description:
+                            'You joined a channel in focus mode, so you are muted until it ends',
+                    },
+                ],
+            });
+        } catch (e) {
+            console.log(`Unable to dm ${state.member.user.tag}`);
+        }
+    }
 });
 
 client.login(process.env.TOKEN);
