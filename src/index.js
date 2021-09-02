@@ -1,10 +1,14 @@
 import 'dotenv/config';
 import { Client, Intents } from 'discord.js';
 import { JellyCommands } from 'jellycommands';
+import flatCache from 'flat-cache';
 import { resolve } from 'path';
 
+const cache = flatCache.load('focus-interval', resolve('./focus-interval'));
+const getCacheValues = () => Object.values(cache.all());
+
 const client = new Client({
-    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
+    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES],
 });
 
 const jelly = new JellyCommands(client);
@@ -16,11 +20,21 @@ client.on('ready', () => {
     jelly.slashCommands.register();
 });
 
+client.on('voiceStateUpdate', (old, state) => {
+    const isFocus = (channelId) =>
+        !!getCacheValues().find(({ channel }) => channel == channelId);
+
+    const joined = !old.channel && state.channel;
+    const moved =
+        old.channelId != state.channelId && old.channelId && state.channelId;
+
+    if (!(joined || moved)) return;
+
+    const focus = isFocus(state.channelId);
+    state.member.voice.setMute(focus);
+});
+
 client.login(process.env.TOKEN);
-
-import flatCache from 'flat-cache';
-
-const cache = flatCache.load('focus-interval', resolve('./focus-interval'));
 
 const add = (time, channel, guild) => {
     const ending = Date.now() + time;
