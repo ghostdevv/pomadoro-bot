@@ -40,6 +40,17 @@ export default createSlashCommand('focus', {
                 ],
             });
 
+        if (timeMS > ms('8h'))
+            return interaction.followUp({
+                ephemeral: true,
+                embeds: [
+                    {
+                        description: "Time can't be greater than 8h",
+                        color: '#FF6347',
+                    },
+                ],
+            });
+
         if (!channel.isVoice())
             return interaction.followUp({
                 ephemeral: true,
