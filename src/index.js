@@ -21,8 +21,7 @@ client.on('ready', () => {
 });
 
 client.on('voiceStateUpdate', (old, state) => {
-    const isFocus = (channelId) =>
-        !!getCacheValues().find(({ channel }) => channel == channelId);
+    const isFocus = (channelId) => !!cache.getKey(channelId);
 
     const joined = !old.channel && state.channel;
     const moved =
@@ -52,26 +51,28 @@ client.on('voiceStateUpdate', (old, state) => {
 
 client.login(process.env.TOKEN);
 
-const add = (time, channel, guild) => {
-    const ending = Date.now() + time;
+client.focus = {
+    add: ({ time, channelId, guildId }) => {
+        const ending = Date.now() + time;
 
-    cache.setKey(Date.now(), { channel, ending, guild });
-    cache.save();
+        cache.setKey(channelId, { channelId, ending, guildId });
+        cache.save();
+    },
+
+    remove: (channelId) => {
+        cache.removeKey(channelId);
+        cache.save();
+    },
 };
-
-client.addFocus = add;
 
 setInterval(async () => {
     const keys = Object.entries(cache.all());
 
     if (keys.length) {
-        for (const [
-            id,
-            { channel: channelID, ending, guild: guildID },
-        ] of keys) {
+        for (const [id, { channelId, ending, guildId }] of keys) {
             if (ending <= Date.now()) {
-                const guild = await client.guilds.fetch(guildID);
-                const channel = await guild.channels.fetch(channelID);
+                const guild = await client.guilds.fetch(guildId);
+                const channel = await guild.channels.fetch(channelId);
 
                 for (const [, member] of channel.members) {
                     await member.voice.setMute(false);

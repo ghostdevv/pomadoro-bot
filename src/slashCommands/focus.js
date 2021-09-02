@@ -8,48 +8,43 @@ export default createSlashCommand('focus', {
 
     options: [
         {
-            name: 'channel',
-            type: 'CHANNEL',
-            description: 'The channel that should be in focus mode',
-            required: true,
+            name: 'start',
+            description: 'Start a focus in a voice channel',
+            type: 'SUB_COMMAND',
+            options: [
+                {
+                    name: 'channel',
+                    type: 'CHANNEL',
+                    description: 'The channel that should be in focus mode',
+                    required: true,
+                },
+                {
+                    name: 'time',
+                    type: 'STRING',
+                    description: 'The time you want to focus for',
+                },
+            ],
         },
         {
-            name: 'time',
-            type: 'STRING',
-            description: 'The time you want to focus for',
+            name: 'end',
+            description: 'End a focus session early',
+            type: 'SUB_COMMAND',
+            options: [
+                {
+                    name: 'channel',
+                    type: 'CHANNEL',
+                    description: 'The channel that should be in focus mode',
+                    required: true,
+                },
+            ],
         },
     ],
 
     defer: true,
 
     run: async ({ interaction, client }) => {
-        const timeStr = interaction.options.getString('time') || '20m';
-        const timeMS = ms(timeStr);
-
         const channel = interaction.options.getChannel('channel');
-
-        if (!timeMS)
-            return interaction.followUp({
-                ephemeral: true,
-                embeds: [
-                    {
-                        description:
-                            'Please give a valid time, for example 25m',
-                        color: '#FF6347',
-                    },
-                ],
-            });
-
-        if (timeMS > ms('8h'))
-            return interaction.followUp({
-                ephemeral: true,
-                embeds: [
-                    {
-                        description: "Time can't be greater than 8h",
-                        color: '#FF6347',
-                    },
-                ],
-            });
+        const subCommand = interaction.options.getSubcommand();
 
         if (!channel.isVoice())
             return interaction.followUp({
@@ -63,19 +58,91 @@ export default createSlashCommand('focus', {
                 ],
             });
 
-        for (const [, member] of channel.members) {
-            await member.voice.setMute(true);
+        switch (subCommand) {
+            case 'start':
+                start({ interaction, client });
+                break;
+
+            case 'end':
+                end({ interaction, client });
+                break;
+
+            default:
+                interaction.followUp({
+                    ephemeral: true,
+                    embeds: [
+                        {
+                            description: 'Unable to find requested sub-command',
+                            color: '#FF6347',
+                        },
+                    ],
+                });
         }
+    },
+});
 
-        client.addFocus(timeMS, channel.id, channel.guild.id);
+async function start({ interaction, client }) {
+    const timeStr = interaction.options.getString('time') || '20m';
+    const channel = interaction.options.getChannel('channel');
+    const timeMS = ms(timeStr);
 
-        interaction.followUp({
+    if (!timeMS)
+        return interaction.followUp({
+            ephemeral: true,
             embeds: [
                 {
-                    description: `${channel.toString()} has been focused for ${timeStr}`,
-                    color: 'RANDOM',
+                    description: 'Please give a valid time, for example 25m',
+                    color: '#FF6347',
                 },
             ],
         });
-    },
-});
+
+    if (timeMS > ms('8h'))
+        return interaction.followUp({
+            ephemeral: true,
+            embeds: [
+                {
+                    description: "Time can't be greater than 8h",
+                    color: '#FF6347',
+                },
+            ],
+        });
+
+    for (const [, member] of channel.members) {
+        await member.voice.setMute(true);
+    }
+
+    client.focus.add({
+        time: timeMS,
+        channelId: channel.id,
+        guildId: channel.guild.id,
+    });
+
+    interaction.followUp({
+        embeds: [
+            {
+                description: `${channel.toString()} has been focused for ${timeStr}`,
+                color: 'RANDOM',
+            },
+        ],
+    });
+}
+
+async function end({ interaction, client }) {
+    const channel = interaction.options.getChannel('channel');
+
+    client.focus.remove(channel.id);
+
+    for (const [, member] of channel.members) {
+        await member.voice.setMute(false);
+    }
+
+    interaction.followUp({
+        embeds: [
+            {
+                description: `Focus ended in ${channel.toString()}`,
+                color: 'RANDOM',
+            },
+        ],
+    });
+}
