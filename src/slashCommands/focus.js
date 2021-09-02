@@ -38,6 +38,19 @@ export default createSlashCommand('focus', {
                 },
             ],
         },
+        {
+            name: 'check',
+            description: 'Check how long is left of a channel focus',
+            type: 'SUB_COMMAND',
+            options: [
+                {
+                    name: 'channel',
+                    type: 'CHANNEL',
+                    description: 'The channel that should be in focus mode',
+                    required: true,
+                },
+            ],
+        },
     ],
 
     defer: true,
@@ -67,6 +80,10 @@ export default createSlashCommand('focus', {
                 end({ interaction, client });
                 break;
 
+            case 'check':
+                check({ interaction, client });
+                break;
+
             default:
                 interaction.followUp({
                     ephemeral: true,
@@ -80,6 +97,33 @@ export default createSlashCommand('focus', {
         }
     },
 });
+
+async function check({ interaction, client }) {
+    const channel = interaction.options.getChannel('channel');
+    const focus = client.focus.get(channel.id);
+
+    if (!focus)
+        return interaction.followUp({
+            ephemeral: true,
+            embeds: [
+                {
+                    description: `No focus session is active in ${channel.toString()}`,
+                    color: '#FF6347',
+                },
+            ],
+        });
+
+    const left = ms(focus.ending - Date.now());
+
+    return interaction.followUp({
+        embeds: [
+            {
+                description: `There is \`${left}\` left of focus in ${channel.toString()}`,
+                color: 'RANDOM',
+            },
+        ],
+    });
+}
 
 async function start({ interaction, client }) {
     const timeStr = interaction.options.getString('time') || '20m';

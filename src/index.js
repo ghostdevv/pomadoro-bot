@@ -63,6 +63,8 @@ client.focus = {
         cache.removeKey(channelId);
         cache.save();
     },
+
+    get: (channelId) => cache.getKey(channelId),
 };
 
 setInterval(async () => {
