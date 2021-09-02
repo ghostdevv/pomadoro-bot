@@ -4,7 +4,7 @@ import ms from 'ms';
 export default createSlashCommand('focus', {
     description: 'Set a channel and a time to focus',
 
-    guilds: ['663140687591768074'],
+    guilds: ['556344107383914547'],
 
     options: [
         {
@@ -22,7 +22,7 @@ export default createSlashCommand('focus', {
 
     defer: true,
 
-    run: ({ interaction, client }) => {
+    run: async ({ interaction, client }) => {
         const timeStr = interaction.options.getString('time') || '20m';
         const timeMS = ms(timeStr);
 
@@ -52,12 +52,9 @@ export default createSlashCommand('focus', {
                 ],
             });
 
-        channel.permissionOverwrites.set([
-            {
-                id: channel.guild.id,
-                deny: ['SPEAK'],
-            },
-        ]);
+        for (const [, member] of channel.members) {
+            await member.voice.setMute(true);
+        }
 
         client.addFocus(timeMS, channel.id, channel.guild.id);
 

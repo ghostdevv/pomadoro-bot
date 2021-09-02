@@ -32,20 +32,23 @@ const add = (time, channel, guild) => {
 client.addFocus = add;
 
 setInterval(async () => {
-    const keys = Object.values(cache.all());
+    const keys = Object.entries(cache.all());
 
     if (keys.length) {
-        for (const { channel: channelID, ending, guild: guildID } of keys) {
+        for (const [
+            id,
+            { channel: channelID, ending, guild: guildID },
+        ] of keys) {
             if (ending <= Date.now()) {
                 const guild = await client.guilds.fetch(guildID);
                 const channel = await guild.channels.fetch(channelID);
 
-                channel.permissionOverwrites.set([
-                    {
-                        id: guildID,
-                        allow: ['SPEAK'],
-                    },
-                ]);
+                for (const [, member] of channel.members) {
+                    await member.voice.setMute(false);
+                }
+
+                cache.removeKey(id);
+                cache.save();
             }
         }
     }
